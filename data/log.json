@@ -1,0 +1,164 @@
+[
+    {
+        "time": "2026-09-09T18:53:34.336342",
+        "function": "login",
+        "status": "success"
+    },
+    {
+        "time": "2026-09-09T18:53:34.336817",
+        "function": "login",
+        "status": "success"
+    },
+    {
+        "time": "2026-09-09T18:53:34.337103",
+        "function": "login",
+        "status": "success"
+    },
+    {
+        "time": "2026-09-09T18:53:34.337261",
+        "function": "login",
+        "status": "error",
+        "error": "Username cannot be empty"
+    },
+    {
+        "time": "2026-09-09T18:53:34.337360",
+        "function": "login",
+        "status": "error",
+        "error": "Password cannot be empty"
+    },
+    {
+        "time": "2026-09-09T19:00:04.107544",
+        "function": "login",
+        "status": "success"
+    },
+    {
+        "time": "2026-09-09T19:00:04.107888",
+        "function": "login",
+        "status": "success"
+    },
+    {
+        "time": "2026-09-09T19:00:04.108024",
+        "function": "login",
+        "status": "success"
+    },
+    {
+        "time": "2026-09-09T19:00:04.108146",
+        "function": "login",
+        "status": "error",
+        "error": "Username cannot be empty"
+    },
+    {
+        "time": "2026-09-09T19:00:04.108243",
+        "function": "login",
+        "status": "error",
+        "error": "Password cannot be empty"
+    },
+    {
+        "time": "2026-09-09T19:17:07.446156",
+        "function": "login",
+        "status": "success"
+    },
+    {
+        "time": "2026-09-09T19:17:07.446666",
+        "function": "login",
+        "status": "success"
+    },
+    {
+        "time": "2026-09-09T19:17:07.447077",
+        "function": "login",
+        "status": "success"
+    },
+    {
+        "time": "2026-09-09T19:17:07.447281",
+        "function": "login",
+        "status": "error",
+        "error": "Username cannot be empty"
+    },
+    {
+        "time": "2026-09-09T19:17:07.447418",
+        "function": "login",
+        "status": "error",
+        "error": "Password cannot be empty"
+    },
+    {
+        "time": "2026-09-09T19:19:32.645190+03:00",
+        "function": "login",
+        "status": "success"
+    },
+    {
+        "time": "2026-09-09T19:19:32.645496+03:00",
+        "function": "login",
+        "status": "success"
+    },
+    {
+        "time": "2026-09-09T19:19:32.645658+03:00",
+        "function": "login",
+        "status": "success"
+    },
+    {
+        "time": "2026-09-09T19:19:32.645796+03:00",
+        "function": "login",
+        "status": "error",
+        "error": "Username cannot be empty"
+    },
+    {
+        "time": "2026-09-09T19:19:32.645904+03:00",
+        "function": "login",
+        "status": "error",
+        "error": "Password cannot be empty"
+    },
+    {
+        "time": "2026-09-09T19:23:16.634903+03:00",
+        "function": "login",
+        "status": "success"
+    },
+    {
+        "time": "2026-09-09T19:23:16.635237+03:00",
+        "function": "login",
+        "status": "success"
+    },
+    {
+        "time": "2026-09-09T19:23:16.635416+03:00",
+        "function": "login",
+        "status": "success"
+    },
+    {
+        "time": "2026-09-09T19:23:16.635567+03:00",
+        "function": "login",
+        "status": "error",
+        "error": "Username cannot be empty"
+    },
+    {
+        "time": "2026-09-09T19:23:16.635692+03:00",
+        "function": "login",
+        "status": "error",
+        "error": "Password cannot be empty"
+    },
+    {
+        "time": "2026-09-09T19:27:31.175722+03:00",
+        "function": "login",
+        "status": "success"
+    },
+    {
+        "time": "2026-09-09T19:27:31.176012+03:00",
+        "function": "login",
+        "status": "success"
+    },
+    {
+        "time": "2026-09-09T19:27:31.176218+03:00",
+        "function": "login",
+        "status": "success"
+    },
+    {
+        "time": "2026-09-09T19:27:31.176410+03:00",
+        "function": "login",
+        "status": "error",
+        "error": "Username cannot be empty"
+    },
+    {
+        "time": "2026-09-09T19:27:31.176565+03:00",
+        "function": "login",
+        "status": "error",
+        "error": "Password cannot be empty"
+    }
+]
