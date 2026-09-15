@@ -1,4 +1,4 @@
-"""Головний файл лабораторної роботи №1."""
+
 
 from task1 import analyze_passwords
 from task2 import run_task2
