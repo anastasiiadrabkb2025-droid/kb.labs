@@ -66,14 +66,14 @@ def check_password(password, all_passwords):
         return "Середній"
 
     if (
-            criteria_met == 4
-            and len(password) >= min_length + 4
-            and all_passwords.count(password) == 1
+        criteria_met == 4
+        and len(password) >= min_length + 4
+        and all_passwords.count(password) == 1
     ):
         return "Дуже сильний"
 
 
-def analyze_passwords():
+def run_task1():
     """Аналізує список паролів."""
     passwords = PASSWORDS.copy()
 
@@ -96,4 +96,4 @@ def analyze_passwords():
 
 
 if __name__ == "__main__":
-    analyze_passwords()
+    run_task1()
