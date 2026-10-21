@@ -16,7 +16,7 @@ class User:
         self.username = username
         self.role = role
         self.active = active
-        self.email = email  # Викличе setter для валідації
+        self.email = email
         self.__password_salt: bytes = b""
         self.__password_hash: bytes = b""
 

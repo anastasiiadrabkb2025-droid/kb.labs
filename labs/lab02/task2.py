@@ -4,10 +4,9 @@ import logging
 import re
 from collections import Counter
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
-logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -21,110 +20,155 @@ class CertStatus:
     is_weak_alg: bool
 
 
-def parse_date(date_str: str) -> datetime:
-    return datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+def load_certificates(certs_path: Path) -> list[dict]:
+    """Завантаження даних про сертифікати з JSON-файлу з обробкою винятків."""
+    try:
+        if not certs_path.exists():
+            raise FileNotFoundError(f"Файл за шляхом '{certs_path}' не існує.")
+
+        with open(certs_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            if not isinstance(data, list):
+                raise TypeError("Вхідні дані JSON повинні бути списком об'єктів.")
+            return data
+
+    except FileNotFoundError as e:
+        logger.error(f"[Помилка файлу] {e}")
+    except json.JSONDecodeError as e:
+        logger.error(f"[Помилка JSON] Файл '{certs_path}' містить некоректний JSON: {e}")
+    except PermissionError:
+        logger.error(f"[Помилка доступу] Немає прав для читання файлу '{certs_path}'.")
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"[Несподівана помилка] Не вдалося завантажити сертифікати: {e}")
+
+    return []
 
 
-def analyze_certificates(certs_file: Path, days_warning: int = 30) -> list[CertStatus]:
-    if not certs_file.exists():
-        logger.error(f"Файл {certs_file} не знайдено.")
-        return []
-
-    logger.info(f"Loading SSL certificates data from {certs_file}...")
-    with open(certs_file, "r", encoding="utf-8") as f:
-        data = json.load(f)
-
-    logger.info(f"Audited {len(data)} domain certificates.\n")
-    now = datetime.now(timezone.utc)
-    results: list[CertStatus] = []
-
+def analyze_certificates(certs_path: Path, days_warning: int = 30) -> list[CertStatus]:
+    """Основна функція аналізу сертифікатів."""
+    certs = load_certificates(certs_path)
+    results = []
+    today = datetime.now(timezone.utc).date()
     weak_alg_pattern = re.compile(r"(?i)sha1|md5")
 
-    for item in data:
-        domain = item.get("domain", "Unknown")
-        issuer = item.get("issuer", "Unknown")
-        valid_to = parse_date(item["validTo"])
-        sig_alg = item.get("signatureAlgorithm", "Unknown")
+    for item in certs:
+        try:
+            domain = item.get("domain", "Unknown")
+            issuer = item.get("issuer", "Unknown")
+            valid_to_str = item.get("validTo", "")
+            sig_alg = item.get("signatureAlgorithm", "")
 
-        days_left = (valid_to - now).days
-        is_weak = bool(weak_alg_pattern.search(sig_alg))
+            valid_to_date = date.fromisoformat(valid_to_str)
+            days_left = (valid_to_date - today).days
 
-        if days_left < 0:
-            status = "EXPIRED"
-        elif days_left <= days_warning:
-            status = "WARNING"
-        else:
-            status = "OK"
+            if days_left < 0:
+                status = "EXPIRED"
+            elif days_left <= days_warning:
+                status = "WARNING"
+            else:
+                status = "OK"
 
-        if is_weak and status == "OK":
-            status = "WEAK_ALG"
+            is_weak = bool(weak_alg_pattern.search(sig_alg))
 
-        results.append(
-            CertStatus(
-                domain=domain,
-                issuer=issuer,
-                days_left=days_left,
-                status=status,
-                signature_alg=sig_alg,
-                is_weak_alg=is_weak,
+            results.append(
+                CertStatus(
+                    domain=domain,
+                    issuer=issuer,
+                    days_left=days_left,
+                    status=status,
+                    signature_alg=sig_alg,
+                    is_weak_alg=is_weak,
+                )
             )
-        )
+        except (ValueError, KeyError, TypeError) as e:
+            logger.error(f"[Помилка обробки елемента] Не вдалося обробити запис {item}: {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"[Несподівана помилка] {e}")
 
     return results
 
 
-def print_report(results: list[CertStatus], days_warning: int):
-    print("=== Certificate Expiry & Safety Status ===")
+def print_report(results: list[CertStatus], days_warning: int) -> None:
+    """Вивід відформатованого звіту у консоль."""
+    if not results:
+        logger.warning("Немає даних для відображення звіту.")
+        return
+
+    print("\n=== Certificate Expiry & Safety Status ===")
     print(f"{'Domain':<28} {'Issuer':<15} {'Days Left':<10} {'Status':<10} {'Signature Alg'}")
     print("-" * 75)
 
-    expired_cnt = 0
-    warning_cnt = 0
+    expired_count = 0
+    warning_count = 0
+    issuers = []
 
     for c in results:
-        status_str = f"{c.status} (WEAK)" if c.is_weak_alg and c.status == "EXPIRED" else c.status
-        print(f"{c.domain:<28} {c.issuer:<15} {f'{c.days_left} days':<10} {status_str:<10} {c.signature_alg}")
-
+        issuers.append(c.issuer)
+        days_str = f"{c.days_left} days"
+        print(f"{c.domain:<28} {c.issuer:<15} {days_str:<10} {c.status:<10} {c.signature_alg}")
         if c.status == "EXPIRED":
-            expired_cnt += 1
+            expired_count += 1
         elif c.status == "WARNING":
-            warning_cnt += 1
+            warning_count += 1
 
     print("\n=== Issuer Statistics ===")
-    issuers = [c.issuer for c in results]
-    for issuer, count in Counter(issuers).items():
+    issuer_counts = Counter(issuers)
+    for issuer, count in issuer_counts.items():
         print(f"{issuer:<15} : {count}")
 
-    print()
-    if expired_cnt > 0 or warning_cnt > 0:
+    if expired_count > 0 or warning_count > 0:
         logger.warning(
-            f"{expired_cnt} certificate(s) EXPIRED! {warning_cnt} certificate(s) expiring within {days_warning} days!"
+            f"{expired_count} certificate(s) EXPIRED! {warning_count} certificate(s) expiring within {days_warning} days!"
         )
 
 
-def export_report(results: list[CertStatus], output_file: Path, fmt: str = "json"):
-    output_file.parent.mkdir(parents=True, exist_ok=True)
+def export_report(results: list[CertStatus], output_file: Path, fmt: str = "json") -> None:
+    """Експорт результатів аналізу у CSV або JSON з обробкою винятків."""
+    try:
+        output_file.parent.mkdir(parents=True, exist_ok=True)
 
-    if fmt.lower() == "csv" or output_file.suffix == ".csv":
-        with open(output_file, "w", newline="", encoding="utf-8") as f:
-            writer = csv.writer(f)
-            writer.writerow(["Domain", "Issuer", "DaysLeft", "Status", "SignatureAlg", "IsWeakAlg"])
-            for c in results:
-                writer.writerow([c.domain, c.issuer, c.days_left, c.status, c.signature_alg, c.is_weak_alg])
-    else:
-        with open(output_file, "w", encoding="utf-8") as f:
-            json.dump([c.__dict__ for c in results], f, indent=2)
+        if fmt.lower() == "csv" or output_file.suffix.lower() == ".csv":
+            with open(output_file, "w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerow([
+                    "Domain",
+                    "Issuer",
+                    "DaysLeft",
+                    "Status",
+                    "SignatureAlg",
+                    "IsWeakAlg",
+                ])
+                for c in results:
+                    writer.writerow([
+                        c.domain,
+                        c.issuer,
+                        c.days_left,
+                        c.status,
+                        c.signature_alg,
+                        c.is_weak_alg,
+                    ])
+        else:
+            with open(output_file, "w", encoding="utf-8") as f:
+                json.dump([c.__dict__ for c in results], f, indent=2, ensure_ascii=False)
 
-    logger.info(f"Report saved to {output_file}")
+        logger.info(f"Report saved to {output_file}")
+
+    except PermissionError:
+        logger.error(f"[Помилка доступу] Немає прав для запису у файл: {output_file}")
+    except OSError as e:
+        logger.error(f"[Помилка вводу/виводу] Не вдалося зберегти звіт у '{output_file}': {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"[Несподівана помилка] Помилка під час експорту звіту: {e}")
 
 
-def run_analysis(certs_data: str, days_warning: int, output_report: str | None, fmt: str):
+def run_analysis(
+    certs_data: str, days_warning: int = 30, output_report: str | None = None, fmt: str = "json"
+) -> None:
+    """Головна функція-контролер для запуску аналізу з CLI."""
     certs_path = Path(certs_data)
     results = analyze_certificates(certs_path, days_warning)
-    if not results:
-        return
 
-    print_report(results, days_warning)
-
-    if output_report:
-        export_report(results, Path(output_report), fmt)
+    if results:
+        print_report(results, days_warning)
+        if output_report:
+            export_report(results, Path(output_report), fmt)
